@@ -5,6 +5,7 @@ from entry import *
 from tkinter import filedialog
 from PIL import ImageTk, Image
 
+# Initialization
 root = tk.Tk()
 root.title("FileFanner")
 root.resizable(False, False)
@@ -33,11 +34,27 @@ def run_program() -> None:
 
         global root_entries
         root_entries = get_entries_in_path(root_path)
-        arrange_entries()
-        
-        
+        arrange_entries()    
 
 def arrangeby_display(entries: list[EntryObject]) -> list:
+    """
+    Filters entries based on the Display value.
+
+    Parameters
+    ----------
+    entries: list[EntryObject]
+        List of EntryObjects to be filtered.
+
+    Returns
+    -------
+    entry_list: list[tuples]
+        List of tuples representing entry properties; passed into arrangeby_sort()
+        
+    """
+
+    # If Display is set to "Folders", only include folders.
+    # If Display is set to "Files", only include files.
+    # No change otherwise.
     filtered_entries = []
     display_state = display_choice.get()
     if display_state == "Folders":
@@ -51,6 +68,8 @@ def arrangeby_display(entries: list[EntryObject]) -> list:
     else:
         filtered_entries = entries
 
+    # Creates list of tuples representing relevant properties of the EntryObjects.
+    # Makes displaying each item in the frame easier by allowing iteration.
     entry_list = []
     for e in filtered_entries:
         entry_item = (e.get_name(),
@@ -64,6 +83,24 @@ def arrangeby_display(entries: list[EntryObject]) -> list:
     return entry_list
 
 def arrangeby_sort(entry_tuples: list):
+    """
+    Sorts entries in place based on the Sort Choice and Sort Order values.
+
+    Parameters
+    ----------
+    entry_tuples: list[tuple]
+        List of tuples representing entry properties to be sorted.
+
+    Returns
+    -------
+    entry_tuples: list[tuple]
+        The same, sorted list of tuples
+    
+    """
+
+    # If Sort Choice is set to "Type", sort tuples by their type property.
+    # If Sort Choice is set to "Size", sort tuples by their bytesize property.
+    # If sort Choice is set to "Name", sort tuples by their name property.
     sort_choice_state = sort_choice.get()
     sort_order_state = sort_order.get()
     reverse_type = -1
@@ -77,12 +114,27 @@ def arrangeby_sort(entry_tuples: list):
         entry_tuples.sort(key = lambda x: x[0])
         reverse_type = 0
 
+    # If Sort Order is set to "Ascending", reverse the list with Sort Choice as the key.
     if sort_order_state == "Ascending":
         entry_tuples.sort(reverse = True, key = lambda x: x[reverse_type])
 
     return entry_tuples
 
 def arrange_entries():
+    """
+    A wrapper function that handles sorting and displaying entries.
+
+    Parameters
+    ----------
+    none
+
+    Returns
+    -------
+    none
+    
+    """
+
+    # Filter root entries through sorting algorithms, then display them in the frame.
     new_tuples = arrangeby_display(root_entries)
     new_list = arrangeby_sort(new_tuples)
     display_entries(new_list)
@@ -160,6 +212,22 @@ b_sort_order_up.grid(row=0, column=7, padx=(0, 10))
 
 
 def set_sort_order(order: int):
+    """
+    Enables/disables the Sort Order buttons depending on which one is selected.
+
+    Parameters
+    ----------
+    order: int
+        The value representing the state of the sort order.
+
+    Returns
+    -------
+    none
+    
+    """
+
+    # If "Ascending" button is clicked, disable it and enable the "Descending" button.
+    # Vice versa.
     sort_order.set(sort_order_options[order])
     if sort_order.get() == sort_order_options[0]:
         b_sort_order_up.config(state="disabled")
@@ -168,10 +236,25 @@ def set_sort_order(order: int):
         b_sort_order_up.config(state="active")
         b_sort_order_down.config(state="disabled")
 
-# Detect Options funcitonality
 def divert_to_arrangement(*args):
+    """
+    A wrapper function that calls arrange_entries() from each sorting variable's observer.
+    (Can likely be optimized; only exists because variables passed by trace.add() make it
+    difficult to call arrange_entries(), which takes no arguments.)
+
+    Parameters
+    ----------
+    *args
+        arguments passed from trace.add()
+
+    Returns
+    -------
+    none
+    
+    """
     arrange_entries()
 
+# Add observers to Sort variables
 display_choice.trace_add("write", divert_to_arrangement)
 sort_choice.trace_add("write", divert_to_arrangement)
 sort_order.trace_add("write", divert_to_arrangement)
@@ -207,6 +290,22 @@ def clear_frame(frame: tk.LabelFrame) -> None:
         widget.destroy()
 
 def get_entries_in_path(path):
+    """
+    Creates a list of EntryObjects from a path containing files.
+
+    Parameters
+    ----------
+    path: str
+        The path containing files.
+
+    Returns
+    -------
+    entry_list: list[EntryObject]
+        A list containing EntryObjects.
+        
+    """
+
+    # Make each DirEntry into an EntryObject.
     entry_list = []
     for direntry in os.scandir(path):
         entry = make_entry_object(direntry)
@@ -233,6 +332,8 @@ def display_entries(entry_tuples: list[tuple]) -> None:
     anchor_list = ["w", "center", "e", "w"]
     color_list = ["white", "light grey"]
 
+    # Displays Labels of each property of each item.
+    # Alternates bg color of labels.
     for i in range(len(entry_tuples)):
         for j in range(4):
             l_entry = tk.Label(f_items,
@@ -241,43 +342,6 @@ def display_entries(entry_tuples: list[tuple]) -> None:
                                bg=color_list[i % 2]
                                )
             l_entry.grid(row=i, column=j, sticky="we")
-    # for e in entry_tuples:
-    #     for i in range(4):
-    #         new_label = tk.Label(f_items, 
-    #                              text=f"{entry_tuples[i]}", 
-    #                              anchor=anchor_list[i], 
-    #                              bg=color_list[entry_num % 2]
-    #                              )
-    #         new_label.grid(row=entry_num, 
-    #                        column=i, 
-    #                        sticky="we"
-    #                        )
-    #     entry_num += 1
-
-
-
-
-
-    # for direntry in os.scandir(path):
-    #     entry = make_entry_object(direntry)
-    #     entry_tuple = (entry.get_name(),
-    #                    entry.get_type(), 
-    #                    entry.get_size(),
-    #                    entry.get_size_group()
-    #                    )
-    #     anchor_list = ["w", "center", "e", "w"]
-    #     color_list = ["white", "light grey"]
-    #     for i in range(4):
-    #         new_label = tk.Label(f_items, 
-    #                              text=f"{entry_tuple[i]}", 
-    #                              anchor=anchor_list[i], 
-    #                              bg=color_list[entry_num % 2]
-    #                              )
-    #         new_label.grid(row=entry_num, 
-    #                        column=i, 
-    #                        sticky="we"
-    #                        )
-    #     entry_num += 1
   
 def make_entry_object(direntry: os.DirEntry) -> EntryObject:
     '''
@@ -297,6 +361,7 @@ def make_entry_object(direntry: os.DirEntry) -> EntryObject:
     size = 2
     type = ""
 
+    # If file, type becomes its extension + "File". If directory, type becomes "Folder".
     if direntry.is_file():
         size = direntry.stat().st_size
         type = f"{os.path.splitext(direntry.name)[1].upper().strip(".")} File"
@@ -306,7 +371,6 @@ def make_entry_object(direntry: os.DirEntry) -> EntryObject:
 
     return EntryObject(direntry.name, size, type)
 
-# Gets combined size of all files in the directory
 def get_dir_size(main_path: str) -> int:
     """
     Returns total size of the directory in bytes.
@@ -333,65 +397,3 @@ def get_dir_size(main_path: str) -> int:
     return total_size
 
 root.mainloop()
-
-# class FileFanner:
-
-#     def __init__(self, root):
-#         self.root = root
-#         self.root_path = ""
-        
-#     def set_root_path(self) -> None:
-#         '''
-#         Selects the root folder in which to look
-#         :return: None
-#         '''
-#         self.root_path = filedialog.askdirectory()
-#         print(self.root_path)        
-
-#     def update_select_file_button(self) -> None:
-#         b_select_file = tk.Button(
-#             self.root, 
-#             text="Select Folder",
-#             command=self.set_root_path
-#             )
-#         b_select_file.grid(
-#             row=0, 
-#             column=0,)
-    
-#     def update_labels(self, direntry) -> None:
-#         tk.Label(self.root, text=f"{direntry.name}").pack()
-
-
-# def main():
-
-#     root = tk.Tk()
-#     root.title("FileFanner")
-#     root.geometry("800x600")
-    
-#     app = FileFanner(root)
-#     app.update_select_file_button()
-
-#     while app.root_path:
-#         print("Got path")
-#         direntry_list = os.scandir(app.root_path)
-#         for direntry in direntry_list:
-#             print(direntry)
-#             app.update_label(direntry)
-
-#     root.mainloop()
-
-# if __name__ == "__main__":
-#     main()
-    
-# Include dropdown
-# include_options = [
-#     "This folder",
-#     "This folder + All subfolders"
-# ]
-# include_choice = tk.StringVar()
-# include_choice.set(include_options[0])
-
-# l_include = tk.Label(root, text="   Include:"
-#                      ).grid(row=0, column=2, padx=(10, 0))
-# d_include = tk.OptionMenu(root, include_choice, *include_options,
-#                           ).grid(row=0, column=3)
